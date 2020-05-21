@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import {InjectModel } from '@nestjs/mongoose';
 import {Model} from 'mongoose';
 import { Market } from './market.model';
@@ -22,12 +22,24 @@ export class MarketService {
     }));
     }
 
-    async createMarket(createMarketDto: CreateMarketDto) {
-      const newMarket = new this.marketModel(createMarketDto);
+    async createMarket(files: [], createMarketDto: CreateMarketDto): Promise<string> {
+      if(files){
+        let imagePaths: string[] = [];
+        files.forEach((file: { filepath: string; }) => {imagePaths.push(file.filepath)});
+        createMarketDto.img = imagePaths;
+      }
+      try {const newMarket = new this.marketModel(createMarketDto);
       const result = await newMarket.save();
       console.log(result);
+      return result.id as string;}
+      catch (error){
+        if(error.name === "MongoNetworkError") {
+          console.log("connection error");
+        } else {
+          throw new HttpException('An error occured', HttpStatus.BAD_REQUEST);
+        }
+      }
 
-      return result.id as string;
     }
 
     async getSingleMarket(marketId: string) {

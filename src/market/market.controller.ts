@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, Header} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Header, UseInterceptors, UploadedFiles} from '@nestjs/common';
+import { diskStorage } from 'multer';
 import { MarketService } from './market.service'
 import { CreateMarketDto } from './createMarket.dto'
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { editFileName, imageFileFilter } from 'src/utils/upload.utils';
+import { LoggingInterceptor } from 'src/utils/logging.interceptor';
 
+@UseInterceptors(LoggingInterceptor)
 @Controller('market')
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
-  private readonly logger = new Logger(MarketController.name)
 
   @Get()
   async getAllMarkets(){
@@ -19,17 +23,28 @@ export class MarketController {
   };
 
   @Post()
-  @Header('Content-Type', 'application/json')
+  @Header("Content-Type", "multipart/form-data")
+  @UseInterceptors(
+    FilesInterceptor('files', 3, {
+      storage: diskStorage({
+      destination: './static/MarketImages',
+      filename: editFileName,
+    }),
+    fileFilter: imageFileFilter,
+  }),
+  )
   async createMarket(
-    @Body() createMarketDto: CreateMarketDto) {
-      const newMarket = await this.marketService.createMarket(createMarketDto)
-      return {id: newMarket}
-  };
+    @UploadedFiles() files: [],
+    @Body() createMarketDto: CreateMarketDto,
+  ) {
+      const newMarket = await this.marketService.createMarket(files, createMarketDto);
+      return {id: newMarket};
+  }
 
   @Patch(':id')
   async updateProduct(
     @Param('id') marketId: string,
-    @Body() createMarketDto: CreateMarketDto
+    @Body() createMarketDto: CreateMarketDto,
   ) {
     await this.marketService.updateMarket(marketId, createMarketDto);
     return null;
