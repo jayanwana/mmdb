@@ -1,21 +1,24 @@
-import { Controller, Request, Post, Body, UseGuards, Logger} from '@nestjs/common';
+import { Controller, Req, Post, Body, UseGuards, Get, Param, Res, UseInterceptors} from '@nestjs/common';
+import { Request, Response } from 'express';
+import { join } from 'path';
 import { UsersService } from './users/users.service';
 import { AuthService } from './auth/auth.service';
 import { LocalAuthGuard } from './auth/local-auth.guard';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { LoggingInterceptor } from './utils/logging.interceptor';
 
 
+@UseInterceptors(LoggingInterceptor)
 @Controller()
 export class AppController {
   constructor(
     private usersService: UsersService,
     private authService: AuthService,
   ) {}
-  private readonly logger = new Logger(AppController.name)
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req) {
+  async login(@Req() req: Request) {
     return this.authService.login(req.user);
   };
 
@@ -23,9 +26,17 @@ export class AppController {
   async register(@Body('email') email: string, @Body('password') password:string) {
     const user = await this.usersService.createUser(email, password);
     if (user) {
-      return user.id as string
+      return user.id as string;
     }
   };
+
+  @Get('static/MarketImages/:imgpath')
+  seeUploadedFile(@Param('imgpath') image: string, @Res() res: Response) {
+    const imagepath: string = join(process.cwd(), "./static/MarketImages", image)
+    console.log(imagepath)
+
+    return res.sendFile(imagepath);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post('test')
