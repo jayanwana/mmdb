@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Header, UseIntercept
 import { diskStorage } from 'multer';
 import { MarketService } from './market.service'
 import { CreateMarketDto } from './createMarket.dto'
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { editFileName, imageFileFilter } from 'src/utils/upload.utils';
 import { LoggingInterceptor } from 'src/utils/logging.interceptor';
 
@@ -22,10 +22,24 @@ export class MarketController {
     return this.marketService.getSingleMarket(marketId);
   };
 
+  @Post('search')
+  async findMarket(@Body('term') term: string, @Body('method') method: string) {
+    return this.marketService.searchMarket(term, method)
+  }
+
+  @Post('location')
+  async findMarketByLocation(@Body('coordinates') coordinates: Array<number>) {
+    return this.marketService.searchMarketByLocation(coordinates)
+  }
+
   @Post()
   @Header("Content-Type", "multipart/form-data")
-  @UseInterceptors(
-    FilesInterceptor('files', 3, {
+  @UseInterceptors(FileFieldsInterceptor([
+      { name: 'img_1', maxCount: 1 },
+      { name: 'img_2', maxCount: 1 },
+      { name: 'img_3', maxCount: 1 }
+    ],
+      {
       storage: diskStorage({
       destination: './static/MarketImages',
       filename: editFileName,

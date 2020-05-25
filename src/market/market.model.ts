@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 
+mongoose.set('useCreateIndex', true);
 const Schema = mongoose.Schema;
 
 const Location = new Schema({
@@ -12,12 +13,18 @@ const Location = new Schema({
   coordinates: [Number]
 });
 
+const Images = new Schema({
+  img_1: String,
+  img_2: String,
+  img_3: String,
+})
+
 export const MarketSchema = new Schema({
   name: {type: String, required: true},
   description: {type: String, required: true},
   foodCategory: {type: String, required: true},
-  img: [String],
-  location: {type: Location}
+  location: {type: Location, required: true ,createIndexes: "2dsphere"},
+  img: {type: Images, default: null},
 });
 
 export interface Market extends mongoose.Document {
@@ -25,6 +32,6 @@ export interface Market extends mongoose.Document {
   name: string;
   description: string;
   foodCategory: string;
-  img: string[];
-  location: string;
+  img: Object;
+  location: Object;
 };

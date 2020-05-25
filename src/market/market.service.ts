@@ -22,19 +22,64 @@ export class MarketService {
     }));
     }
 
-    async createMarket(files: [], createMarketDto: CreateMarketDto): Promise<string> {
+    async searchMarket(term: string, method: string) {
+      const markets = await this.marketModel.find({ [method]: {$regex: term, $options: 'i'}}).exec()
+      if(markets) {
+        return markets.map((market: Market) =>
+        ({id: market.id,
+          name: market.name,
+          description: market.description,
+          foodCategory: market.foodCategory,
+          img: market.img,
+          location: market.location
+        }));
+      }
+
+    }
+
+    async searchMarketByLocation(coordinates: Array<number>) {
+      if(coordinates.length === 2){const markets = await this.marketModel.find({
+        location: {
+             $near: {
+               $geometry: {
+                  type: "Point" ,
+                  coordinates: [ coordinates[1] ,coordinates[0] ]
+               },
+               $maxDistance: 1000000,
+               $minDistance: 10
+     }
+   }
+      })
+      if(markets) {
+        return markets.map((market: Market) =>
+        ({id: market.id,
+          name: market.name,
+          description: market.description,
+          foodCategory: market.foodCategory,
+          img: market.img,
+          location: market.location
+        }));
+      }
+    } else {
+      throw new NotFoundException('Invalid Location Details.');
+    }
+    }
+
+    async createMarket(files: {}, createMarketDto: CreateMarketDto): Promise<string> {
       if(files){
-        let imagePaths: string[] = [];
-        files.forEach((file: { filepath: string; }) => {imagePaths.push(file.filepath)});
+        let imagePaths: Object = {};
+        Object.keys(files).map(key => imagePaths[key] = files[key][0].filename);
         createMarketDto.img = imagePaths;
+      }
+      if(typeof(createMarketDto.location)==='string'){
+        createMarketDto.location = JSON.parse(createMarketDto.location)
       }
       try {const newMarket = new this.marketModel(createMarketDto);
       const result = await newMarket.save();
-      console.log(result);
       return result.id as string;}
       catch (error){
         if(error.name === "MongoNetworkError") {
-          console.log("connection error");
+          throw new HttpException('Database Connection Error', HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
           throw new HttpException('An error occured', HttpStatus.BAD_REQUEST);
         }
@@ -53,27 +98,25 @@ export class MarketService {
       location: market.location
     };
   }
-      async updateMarket(
-      marketId: string,
-      createMarketDto: CreateMarketDto
-    ) {
-      const updatedMarket = await this.findMarket(marketId);
-      if (createMarketDto.name) {
-        updatedMarket.name = name;
-      }
-      if (createMarketDto.description) {
-        updatedMarket.description = createMarketDto.description;
-      }
-      if (createMarketDto.foodCategory) {
-        updatedMarket.foodCategory = createMarketDto.foodCategory;
-      }
-      if (createMarketDto.img) {
-        updatedMarket.img = createMarketDto.img;
-      }
-      if (createMarketDto.location) {
-        updatedMarket.location = createMarketDto.location;
-      }
-      updatedMarket.save();
+
+    async updateMarket(marketId: string, createMarketDto: CreateMarketDto){
+        const updatedMarket = await this.findMarket(marketId);
+        if (createMarketDto.name) {
+          updatedMarket.name = name;
+        }
+        if (createMarketDto.description) {
+          updatedMarket.description = createMarketDto.description;
+        }
+        if (createMarketDto.foodCategory) {
+          updatedMarket.foodCategory = createMarketDto.foodCategory;
+        }
+        if (createMarketDto.img) {
+          updatedMarket.img = createMarketDto.img;
+        }
+        if (createMarketDto.location) {
+          updatedMarket.location = createMarketDto.location;
+        }
+        updatedMarket.save();
     }
 
     async deleteMarket(marketId: string) {
