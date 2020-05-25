@@ -1,14 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import { NestExpressApplication, ExpressAdapter } from '@nestjs/platform-express';
+import * as Express from 'express';
 import { join } from 'path';
 
-async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['log', 'error', 'warn'],
-  });
+const server = Express();
+server.get('/', (req, res) => res.send('ok'));
+server.get('/-ah/health', (req, res) => res.send('ok'));
 
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server));
   app.useStaticAssets(join(process.cwd(), '../static/'));
-  await app.listen(3000);
+  app.enableCors();
+  await app.listen(8080);
 }
 bootstrap();
