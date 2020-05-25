@@ -33,8 +33,6 @@ export class AppController {
   @Get('static/MarketImages/:imgpath')
   seeUploadedFile(@Param('imgpath') image: string, @Res() res: Response) {
     const imagepath: string = join(process.cwd(), "./static/MarketImages", image)
-    console.log(imagepath)
-
     return res.sendFile(imagepath);
   }
 

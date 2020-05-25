@@ -7,6 +7,8 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     console.log('Before...');
     const request = context.getArgByIndex(0);
+    // console.log(request);
+
     console.log(request.body);
 
 
