@@ -7,12 +7,12 @@ import { MarketModule } from './market/market.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 
+const MONGODB_URL = process.env['MONGO_URL']
+
 @Module({
   imports: [
-    UsersModule, MarketModule, AuthModule, MongooseModule.forRoot(
-    'mongodb+srv://jayanwana:Jp5cGb8nW2mTT3Ow@cluster0-fgqw7.gcp.mongodb.net/market?retryWrites=true&w=majority'),
-    MongooseModule.forRoot(
-    'mongodb+srv://jayanwana:Jp5cGb8nW2mTT3Ow@cluster0-fgqw7.gcp.mongodb.net/user?retryWrites=true&w=majority'),
+    UsersModule, MarketModule, AuthModule, MongooseModule.forRoot(`${MONGODB_URL}market?retryWrites=true&w=majority`),
+    MongooseModule.forRoot(`${MONGODB_URL}user?retryWrites=true&w=majority`),
     MulterModule.register({dest: 'static/MarketImages'})
 ],
   controllers: [AppController],
