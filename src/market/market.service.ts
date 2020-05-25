@@ -17,6 +17,7 @@ export class MarketService {
       name: market.name,
       description: market.description,
       foodCategory: market.foodCategory,
+      address: market.address,
       img: market.img,
       location: market.location
     }));
@@ -30,6 +31,7 @@ export class MarketService {
           name: market.name,
           description: market.description,
           foodCategory: market.foodCategory,
+          address: market.address,
           img: market.img,
           location: market.location
         }));
@@ -47,8 +49,8 @@ export class MarketService {
                },
                $maxDistance: 1000000,
                $minDistance: 10
-     }
-   }
+         }
+       }
       })
       if(markets) {
         return markets.map((market: Market) =>
@@ -56,6 +58,7 @@ export class MarketService {
           name: market.name,
           description: market.description,
           foodCategory: market.foodCategory,
+          address: market.address,
           img: market.img,
           location: market.location
         }));
@@ -67,9 +70,7 @@ export class MarketService {
 
     async createMarket(files: {}, createMarketDto: CreateMarketDto): Promise<string> {
       if(files){
-        let imagePaths: Object = {};
-        Object.keys(files).map(key => imagePaths[key] = files[key][0].filename);
-        createMarketDto.img = imagePaths;
+        createMarketDto.img = this.extractImageName(files)
       }
       if(typeof(createMarketDto.location)==='string'){
         createMarketDto.location = JSON.parse(createMarketDto.location)
@@ -81,7 +82,8 @@ export class MarketService {
         if(error.name === "MongoNetworkError") {
           throw new HttpException('Database Connection Error', HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
-          throw new HttpException('An error occured', HttpStatus.BAD_REQUEST);
+
+          throw new HttpException(error, HttpStatus.BAD_REQUEST);
         }
       }
 
@@ -99,10 +101,14 @@ export class MarketService {
     };
   }
 
-    async updateMarket(marketId: string, createMarketDto: CreateMarketDto){
+    async updateMarket(marketId: string, files: {}, createMarketDto: CreateMarketDto){
         const updatedMarket = await this.findMarket(marketId);
+        // Check for updated fields and update the model instance accordingly
+        if(files){
+          updatedMarket.img = this.extractImageName(files)
+        }
         if (createMarketDto.name) {
-          updatedMarket.name = name;
+          updatedMarket.name = createMarketDto.name;
         }
         if (createMarketDto.description) {
           updatedMarket.description = createMarketDto.description;
@@ -110,11 +116,22 @@ export class MarketService {
         if (createMarketDto.foodCategory) {
           updatedMarket.foodCategory = createMarketDto.foodCategory;
         }
+        if (createMarketDto.address) {
+          updatedMarket.address = createMarketDto.address;
+        }
         if (createMarketDto.img) {
-          updatedMarket.img = createMarketDto.img;
+          if(createMarketDto.img['img_1']){
+          updatedMarket.img['img_1'] = createMarketDto.img['img_1'];}
+          if(createMarketDto.img['img_2']){
+          updatedMarket.img['img_2'] = createMarketDto.img['img_2'];}
+          if(createMarketDto.img['img_3']){
+          updatedMarket.img['img_3'] = createMarketDto.img['img_3'];}
         }
         if (createMarketDto.location) {
-          updatedMarket.location = createMarketDto.location;
+          if(typeof(createMarketDto.location)==='string'){
+            updatedMarket.location = JSON.parse(createMarketDto.location)
+          } else {
+          updatedMarket.location = createMarketDto.location;}
         }
         updatedMarket.save();
     }
@@ -137,5 +154,11 @@ export class MarketService {
       throw new NotFoundException('Market not found.');
     }
     return market;
+    }
+
+    private extractImageName(files: {}) {
+      let imagePaths: Object = {};
+      Object.keys(files).map(key => imagePaths[key] = files[key][0].filename);
+      return imagePaths;
     }
 }

@@ -2,8 +2,9 @@ export class CreateMarketDto {
   name: string;
   description: string;
   foodCategory: string;
-  img: Object;
+  address: string;
   location: LocationDto;
+  img: Object;
 }
 
 class LocationDto {
